@@ -55,13 +55,12 @@ let buildContainer () =
                     .AddSubscriberServices(fun c -> c.FromTopic("MyCommand") |> ignore)
                     .WithDefaultOptions()
                     .UsePipeline(fun pipelineBuilder ->
-                        pipelineBuilder
-                            .UseExceptionHandlingMiddleware()
-                            .Use(fun next ->
-                                (PipelineDelegate<MessagingContext> (fun ctx ct ->
-                                    let logger = ctx.Services.GetRequiredService<ILogger<MessageBus>>()
-                                    logger.LogInformation("Helooooooooooooooooooooooooo")
-                                    next.Invoke(ctx, ct))))
+                        pipelineBuilder.UseExceptionHandlingMiddleware()
+                        // .Use(fun next ->
+                        //     (PipelineDelegate<MessagingContext> (fun ctx ct ->
+                        //         let logger = ctx.Services.GetRequiredService<ILogger<MessageBus>>()
+                        //         logger.LogInformation("Helooooooooooooooooooooooooo")
+                        //         next.Invoke(ctx, ct))))
                         |> ignore)
                 |> ignore)
             |> ignore
@@ -72,16 +71,14 @@ let buildContainer () =
 
 
 let runMessagingHost (container: ServiceProvider) =
-    let msgHost = container.GetRequiredService<IMessagingHost>()
+    task {
+        let msgHost = container.GetRequiredService<IMessagingHost>()
+        do! msgHost.StartAsync()
+        // do! Task.Delay(100000)
+        // do! msgHost.StopAsync()
+        return msgHost
+    }
 
-    let t =
-        task {
-            do! msgHost.StartAsync()
-            do! Task.Delay(100000)
-            do! msgHost.StopAsync()
-        }
-
-    t.Wait()
 
 let publish (container: ServiceProvider) (cnt: int) =
     let msgBus = container.GetRequiredService<IMessageBusPublisher>()
@@ -90,7 +87,7 @@ let publish (container: ServiceProvider) (cnt: int) =
 
     let t =
         task {
-            for i in 0..cnt do
+            for i in 1..cnt do
                 do! msgBus.PublishAsync({ id = i }, o)
         }
 
