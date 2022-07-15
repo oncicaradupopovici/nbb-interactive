@@ -14,7 +14,6 @@ open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Hosting
 open NBB.Messaging.Host
 open Moq
-open System.Threading.Tasks
 open System.IO
 open NBB.Messaging.Abstractions
 open NBB.Core.Pipeline
@@ -92,9 +91,3 @@ let publish (container: ServiceProvider) (cnt: int) =
         }
 
     t.Wait()
-
-let testLog () =
-    let c = buildContainer ()
-    let logger = c.GetRequiredService<ILogger<MessageBus>>()
-    logger.LogDebug("debug________________")
-    logger.LogInformation(Directory.GetCurrentDirectory())
