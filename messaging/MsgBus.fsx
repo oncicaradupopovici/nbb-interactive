@@ -1,4 +1,5 @@
 #r "nuget: NBB.Messaging.Nats, 6.0.19"
+#r "nuget: NBB.Messaging.Rusi, 6.0.19"
 #r "nuget: Microsoft.Extensions.DependencyInjection, 6.0.0"
 #r "nuget: Microsoft.Extensions.Hosting, 6.0.1"
 #r "nuget: Microsoft.Extensions.Configuration, 6.0.0"
@@ -14,22 +15,37 @@ open System.Threading.Tasks
 
 let c = CompositionRoot.buildContainer (fun _ _ -> ())
 
-let pub topic cnt =
+let pubAsync topic cnt =
     let msgBus = c.GetRequiredService<IMessageBusPublisher>()
     let o = MessagingPublisherOptions.Default
     o.TopicName <- topic
 
-    let t =
-        task {
-            for i in 1..cnt do
-                do! msgBus.PublishAsync({|id=i|}, o)
-        }
+    task {
+        for i in 1..cnt do
+            do! msgBus.PublishAsync({| id = i |}, o)
+    }
 
-    t.Wait()
+let pub topic cnt = 
+    pubAsync topic cnt |> ignore
 
-let sub topic =
+
+let subAsync (h: MessagingEnvelope -> Task<unit>) topic =
     let msgBus = c.GetRequiredService<IMessageBusSubscriber>()
-    let h _envelope = Task.CompletedTask
     let o = MessagingSubscriberOptions.Default
     o.TopicName <- topic
-    msgBus.SubscribeAsync(h, o).Result
+    task {
+        let h1 e = h(e) :> Task
+        return! msgBus.SubscribeAsync(h1, o)
+    }
+
+let sub topic = (subAsync (fun _e -> task {return ()}) topic).Result
+
+let infiniteSub topic = 
+    let h _e = pubAsync topic 1
+    let t = subAsync h topic
+    t.Result
+
+let subMany cnt = 
+    [1..cnt] 
+    |> List.map (sprintf "topic_%i")
+    |> List.map sub

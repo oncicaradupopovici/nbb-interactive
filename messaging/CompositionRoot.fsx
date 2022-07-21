@@ -1,5 +1,6 @@
 // #r "nuget: NBB.Messaging.Host, 6.0.19"
 #r "nuget: NBB.Messaging.Nats, 6.0.19"
+#r "nuget: NBB.Messaging.Rusi, 6.0.19"
 #r "nuget: Microsoft.Extensions.DependencyInjection, 6.0.0"
 #r "nuget: Microsoft.Extensions.Hosting, 6.0.1"
 #r "nuget: Microsoft.Extensions.Configuration, 6.0.0"
@@ -33,7 +34,7 @@ let buildContainer servicesAction =
 
     services
         .AddMessageBus()
-        .AddNatsTransport(configuration)
+        .AddRusiTransport(configuration)
     |> ignore
 
     servicesAction services configuration
